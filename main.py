@@ -13,7 +13,7 @@ import os
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 IMGBB_API = os.getenv("IMGBB_API")
 
-START COMMAND
+#START COMMAND
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
