@@ -93,9 +93,13 @@ except Exception as e:
         f"❌ Upload failed.\n\n{e}"
     )
 
+APP
+
 app = Application.builder().token(
 BOT_TOKEN
 ).build()
+
+HANDLERS
 
 app.add_handler(
 CommandHandler("start", start)
@@ -104,6 +108,8 @@ CommandHandler("start", start)
 app.add_handler(
 CommandHandler("tgm", tgm)
 )
+
+RUN
 
 print("Bot Running...")
 
