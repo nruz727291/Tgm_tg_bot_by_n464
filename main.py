@@ -4,6 +4,8 @@ import requests
 import base64
 import time
 import os
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 IMGBB_API = os.getenv("IMGBB_API")
@@ -71,6 +73,22 @@ app = Application.builder().token(BOT_TOKEN).build()
 
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("tgm", tgm))
+
+
+# 🔴 FAKE WEB SERVER (Render Web Service fix)
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot Running")
+
+def run_server():
+    port = int(os.environ.get("PORT", 10000))
+    server = HTTPServer(("0.0.0.0", port), Handler)
+    server.serve_forever()
+
+threading.Thread(target=run_server, daemon=True).start()
+
 
 print("Bot Running...")
 app.run_polling()
