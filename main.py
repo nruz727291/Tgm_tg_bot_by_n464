@@ -17,7 +17,7 @@ IMGBB_API = os.getenv("IMGBB_API")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-text = (
+    text = (
     "🖼 Image uploader url bot\n\n"
     "By - @Naruto_464"
 )
