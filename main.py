@@ -1,10 +1,5 @@
 from telegram import Update
-from telegram.ext import (
-Application,
-CommandHandler,
-ContextTypes
-)
-
+from telegram.ext import Application, CommandHandler, ContextTypes
 import requests
 import base64
 import time
@@ -13,104 +8,69 @@ import os
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 IMGBB_API = os.getenv("IMGBB_API")
 
-#START COMMAND
-
+# START COMMAND
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     text = (
-    "🖼 Image uploader url bot\n\n"
-    "By - @Naruto_464"
-)
+        "🖼 Image uploader bot\n\n"
+        "Reply to any image and use /tgm\n"
+        "By - @Naruto_464"
+    )
+    await update.message.reply_text(text)
 
-await update.message.reply_text(text)
 
-TGM COMMAND
-
+# TGM COMMAND
 async def tgm(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-if not update.message.reply_to_message:
+    if not update.message.reply_to_message:
+        await update.message.reply_text("❌ Reply to an image first.")
+        return
 
-    await update.message.reply_text(
-        "❌ Please reply to an image to generate URL."
-    )
-    return
+    replied = update.message.reply_to_message
 
-replied = update.message.reply_to_message
+    if not replied.photo:
+        await update.message.reply_text("❌ Reply to a valid image.")
+        return
 
-if not replied.photo:
+    msg = await update.message.reply_text("📤 Uploading...")
 
-    await update.message.reply_text(
-        "❌ Please reply to a valid image."
-    )
-    return
+    start_time = time.time()
 
-msg = await update.message.reply_text(
-    "📤 Uploading to ImgBB..."
-)
+    try:
+        photo = replied.photo[-1]
 
-start_time = time.time()
+        file = await context.bot.get_file(photo.file_id)
+        image_bytes = await file.download_as_bytearray()
 
-try:
+        encoded_image = base64.b64encode(image_bytes).decode()
 
-    photo = replied.photo[-1]
+        response = requests.post(
+            "https://api.imgbb.com/1/upload",
+            data={
+                "key": IMGBB_API,
+                "image": encoded_image
+            }
+        ).json()
 
-    file = await context.bot.get_file(
-        photo.file_id
-    )
+        if "data" not in response:
+            await msg.edit_text(f"❌ Upload failed\n{response}")
+            return
 
-    image_bytes = await file.download_as_bytearray()
+        image_url = response["data"]["url"]
+        total_time = round(time.time() - start_time, 2)
 
-    encoded_image = base64.b64encode(
-        image_bytes
-    )
+        await msg.edit_text(
+            f"✅ Uploaded in {total_time}s\n\n{image_url}"
+        )
 
-    response = requests.post(
-        "https://api.imgbb.com/1/upload",
-        data={
-            "key": IMGBB_API,
-            "image": encoded_image
-        }
-    ).json()
+    except Exception as e:
+        await msg.edit_text(f"❌ Error:\n{e}")
 
-    image_url = response["data"]["url"]
 
-    total_time = round(
-        time.time() - start_time,
-        2
-    )
+# APP SETUP
+app = Application.builder().token(BOT_TOKEN).build()
 
-    final_text = (
-        f"✅ Uploaded to ImgBB in "
-        f"{total_time} seconds.\n\n"
-        f"{image_url}"
-    )
-
-    await msg.edit_text(final_text)
-
-except Exception as e:
-
-    await msg.edit_text(
-        f"❌ Upload failed.\n\n{e}"
-    )
-
-APP
-
-app = Application.builder().token(
-BOT_TOKEN
-).build()
-
-HANDLERS
-
-app.add_handler(
-CommandHandler("start", start)
-)
-
-app.add_handler(
-CommandHandler("tgm", tgm)
-)
-
-RUN
+app.add_handler(CommandHandler("start", start))
+app.add_handler(CommandHandler("tgm", tgm))
 
 print("Bot Running...")
-
 app.run_polling()
